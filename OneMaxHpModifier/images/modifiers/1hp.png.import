@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cwg515y1jextm"
-path="res://.godot/imported/precarious.png-da0fa1903ac4ac7ac5a5a69e849cd19b.ctex"
+uid="uid://bhwejixcd48q5"
+path="res://.godot/imported/1hp.png-9bb317c5f0c2e96b18294317db9ce19d.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://OneMaxHpModifier/images/modifiers/precarious.png"
-dest_files=["res://.godot/imported/precarious.png-da0fa1903ac4ac7ac5a5a69e849cd19b.ctex"]
+source_file="res://OneMaxHpModifier/images/modifiers/1hp.png"
+dest_files=["res://.godot/imported/1hp.png-9bb317c5f0c2e96b18294317db9ce19d.ctex"]
 
 [params]
 
