@@ -1,15 +1,17 @@
-using System.Reflection;
 using System.Reflection.Emit;
 using BaseLib.Abstracts;
 using BaseLib.Extensions;
-using BaseLib.Utils.Patching;
 using HarmonyLib;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
+using MegaCrit.Sts2.Core.Events;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
+using MegaCrit.Sts2.Core.Localization;
 using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Models.Events;
 using MegaCrit.Sts2.Core.Runs;
+using OneMaxHpModifier.OneMaxHpModifierCode.Patches;
 
 namespace OneMaxHpModifier.OneMaxHpModifierCode.Modifiers;
 
