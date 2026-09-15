@@ -3,7 +3,7 @@
   "name": "Precarious",
   "author": "TekExplorer",
   "description": "A mod that adds a new Precarious modifier",
-  "version": "v0.0.3",
+  "version": "v0.0.4",
   "min_game_version": "0.107.0",
   "has_pck": true,
   "has_dll": true,

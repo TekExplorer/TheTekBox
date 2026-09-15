@@ -1,11 +1,11 @@
-using System.Collections.Generic;
-using System.Linq;
 using System.Reflection.Emit;
 using HarmonyLib;
 using MegaCrit.Sts2.Core.Events;
 using MegaCrit.Sts2.Core.Localization;
 using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Models.Events;
+using MegaCrit.Sts2.Core.Models.Relics;
 using OneMaxHpModifier.OneMaxHpModifierCode.Modifiers;
 
 namespace OneMaxHpModifier.OneMaxHpModifierCode.Patches;
@@ -13,6 +13,11 @@ namespace OneMaxHpModifier.OneMaxHpModifierCode.Patches;
 [HarmonyPatch(typeof(Neow), "OnModifierOptionSelected", MethodType.Async)]
 public static class OnModifierOptionSelectedPatch
 {
+    private static bool ShouldAllowStandard(IEnumerable<ModifierModel> modifiers)
+    {
+        // TODO: make custom NeowOptions modifier
+        return modifiers.Any(mod => mod is Precarious);
+    }
     // Helper replacing SetEventFinished
     public static void HandleModifierFinished(Neow instance, LocString finishDescription)
     {
@@ -51,11 +56,6 @@ public static class OnModifierOptionSelectedPatch
            .GetValue(initialDesc, standardOptions);
     }
 
-    private static bool ShouldAllowStandard(IEnumerable<ModifierModel> modifiers)
-    {
-        return modifiers.Any(mod => mod is Precarious);
-    }
-
     [HarmonyTranspiler]
     public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
     {
@@ -78,7 +78,7 @@ public static class OnModifierOptionSelectedPatch
             // Replace the method token directly with our static hook
             matcher.Set(
                 OpCodes.Call,
-                CodeInstruction.Call(() => HandleModifierFinished(null!, default)).operand
+                CodeInstruction.Call(() => HandleModifierFinished(null!, default!)).operand
             );
         }
 

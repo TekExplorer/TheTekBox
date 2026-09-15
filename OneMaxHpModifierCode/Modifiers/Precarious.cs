@@ -1,48 +1,54 @@
+using System.Reflection;
 using System.Reflection.Emit;
 using BaseLib.Abstracts;
 using BaseLib.Extensions;
+using BaseLib.Utils.Patching;
+using Godot;
 using HarmonyLib;
+using MegaCrit.Sts2.Core.Assets;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
-using MegaCrit.Sts2.Core.Events;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
-using MegaCrit.Sts2.Core.Localization;
 using MegaCrit.Sts2.Core.Models;
-using MegaCrit.Sts2.Core.Models.Events;
 using MegaCrit.Sts2.Core.Runs;
-using OneMaxHpModifier.OneMaxHpModifierCode.Patches;
 
 namespace OneMaxHpModifier.OneMaxHpModifierCode.Modifiers;
 
-// [HarmonyPatch(typeof(CreatureCmd), nameof(CreatureCmd.GainMaxHp), MethodType.Async)]
-// static class MaxHpPatch
-// {
-//     [HarmonyTranspiler]
-//     static internal IEnumerable<CodeInstruction> Transpiler(ILGenerator generator, IEnumerable<CodeInstruction> code, MethodBase original)
-//     {
-//         return AsyncMethodCall.Create(generator, code, original,
-//             callMethod: AccessTools.Method(typeof(MaxHpPatch), nameof(FixMaxHp)),
-//             afterState: original
-//         );
-//     }
+[HarmonyPatch(typeof(CreatureCmd), nameof(CreatureCmd.GainMaxHp), MethodType.Async)]
+static class MaxHpPatch
+{
+    [HarmonyTranspiler]
+    static internal IEnumerable<CodeInstruction> Transpiler(ILGenerator generator, IEnumerable<CodeInstruction> code, MethodBase original)
+    {
+        return AsyncMethodCall.Create(generator, code, original,
+            callMethod: AccessTools.Method(typeof(MaxHpPatch), nameof(FixMaxHp)),
+            afterState: original
+        );
+    }
 
-//     static internal async Task FixMaxHp(Creature creature)
-//     {
-//         if (!creature.IsPlayer) return;
-//         var player = creature.Player!;
-//         if (!player.RunState.Modifiers.Any(mod => mod is Precarious)) return;
-//         await Precarious.LoseMaxHpToOne(creature);
-//     }
-// }
+    static internal async Task FixMaxHp(Creature creature)
+    {
+        if (!creature.IsPlayer) return;
+        var player = creature.Player!;
+        if (!player.RunState.Modifiers.Any(mod => mod is Precarious)) return;
+        await Precarious.LoseMaxHpToOne(creature);
+    }
+}
 
 public class Precarious : CustomModifierModel
 {
     public override ModifierAlignment Alignment => ModifierAlignment.Bad;
-    protected override string IconPath => ImageHelperExtensions.GetModImagePath("modifiers/1hp.png");
+
+    static readonly string StaticIconPath = ImageHelperExtensions.GetModImagePath("modifiers/1hp.png");
+    protected override string IconPath => StaticIconPath;
+
+    // Uncomment to make it show up at the top of the negative modifiers
+    // public override int SortOrder => -1;
 
     public override Func<Task>? GenerateNeowOption(EventModel eventModel)
     {
+        if (eventModel.Owner == null) return null;
         return () => LoseMaxHpToOne(eventModel.Owner.Creature);
     }
 
