@@ -39,6 +39,14 @@ static class MaxHpPatch
 public class Precarious : CustomModifierModel
 {
     public override ModifierAlignment Alignment => ModifierAlignment.Bad;
+    static public void Preload()
+    {
+        if (ResourceLoader.Exists(StaticIconPath))
+        {
+            _preloaded = PreloadManager.Cache.GetTexture2D(StaticIconPath);
+        }
+    }
+    static Texture2D? _preloaded;
 
     static readonly string StaticIconPath = ImageHelperExtensions.GetModImagePath("modifiers/1hp.png");
     protected override string IconPath => StaticIconPath;

@@ -24,5 +24,7 @@ public partial class MainFile : Node
         Harmony harmony = new(ModId);
 
         harmony.TryPatchAll(Assembly.GetExecutingAssembly());
+
+        Modifiers.Precarious.Preload();
     }
 }
