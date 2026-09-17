@@ -36,4 +36,5 @@ public class Config : SimpleModConfig
 {
     public enum RelicGetSfxType { Normal, Shatter, None }
     static public RelicGetSfxType RelicGetSfx { get; set; } = RelicGetSfxType.Shatter;
+    static public bool RelicShatterVfxEnabled { get; set; } = true;
 }

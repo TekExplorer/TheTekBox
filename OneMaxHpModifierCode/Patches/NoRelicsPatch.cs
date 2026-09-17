@@ -14,8 +14,10 @@ using MegaCrit.Sts2.Core.Models.Relics;
 using MegaCrit.Sts2.Core.Nodes;
 using MegaCrit.Sts2.Core.Nodes.Relics;
 using MegaCrit.Sts2.Core.Nodes.Rewards;
+using MegaCrit.Sts2.Core.Nodes.Rooms;
 using MegaCrit.Sts2.Core.Nodes.Screens;
 using MegaCrit.Sts2.Core.Nodes.Screens.Overlays;
+using MegaCrit.Sts2.Core.Nodes.Screens.Shops;
 using MegaCrit.Sts2.Core.Nodes.Screens.TreasureRoomRelic;
 using MegaCrit.Sts2.Core.Rewards;
 using MegaCrit.Sts2.Core.Runs;
@@ -38,9 +40,10 @@ public static class NoRelicsPatch
 
     [HarmonyPrefix]
     [HarmonyPatch(typeof(NRelicInventory), nameof(NRelicInventory.AnimateRelic), [typeof(RelicModel), typeof(Vector2?), typeof(Vector2?)])]
-    static bool AnimateRelicPrefix(RelicModel relic)
+    static bool AnimateRelicPrefix(RelicModel relic, Vector2? startPosition = null, Vector2? startScale = null)
     {
         if (!NoRelics.IsActive() || relic == null) return true;
+        if (!Config.RelicShatterVfxEnabled) return false;
 
         // 1. CHESTS: Use the live holder's NRelic
         if (NRun.Instance?.TreasureRoom is { _relicCollection: { } collection })
@@ -58,6 +61,29 @@ public static class NoRelicsPatch
                 NShatterVfx.ShatterRelicNode(holder.Relic);
             }
             return false;
+        }
+
+        if (NRun.Instance?.MerchantRoom is { } shop)
+        {
+            var merchantRelic = shop.Inventory._relicContainer?.GetChildren().OfType<NMerchantRelic>().Select(r => r._relicNode).FirstOrDefault(r => r?._model?.Id == relic.Id);
+            if (merchantRelic != null)
+            {
+                NShatterVfx.ShatterRelicNode(merchantRelic);
+                return false;
+            }
+        }
+
+        if (NRun.Instance?.EventRoom is { _event: AncientEventModel } eventRoom)
+        {
+            // TODO: doesn't work
+            var buttons = eventRoom?.Layout?.OptionButtons.ToList();
+            var button = buttons?.FirstOrDefault(b => b.Option.Relic?.Id == relic.Id);
+            var relicIcon = button?.GetNode<TextureRect>("%RelicIcon");
+            if (relicIcon != null)
+            {
+                NShatterVfx.ShatterTextureRect(relicIcon);
+                return false;
+            }
         }
 
         // 2. REWARDS SCREEN: Use the button's live _iconContainer
@@ -80,7 +106,14 @@ public static class NoRelicsPatch
             }
         }
 
-        // event
+        var nRelic = NRelic.Create(relic, NRelic.IconSize.Large);
+        if (nRelic != null)
+        {
+            nRelic.GlobalPosition = startPosition ?? NGame.Instance!.Size / 2;
+            if (startScale is { } s) nRelic.Scale = s;
+            NOverlayStack.Instance?.AddChild(nRelic);
+            NShatterVfx.ShatterRelicNode(nRelic);
+        }
 
         return false;
     }
@@ -116,6 +149,7 @@ public static class NoRelicsPatch
 
         if (LocalContext.IsMe(player))
         {
+            NRun.Instance?.GlobalUi.RelicInventory.AnimateRelic(relic);
             switch (Config.RelicGetSfx)
             {
                 case Config.RelicGetSfxType.Normal:
