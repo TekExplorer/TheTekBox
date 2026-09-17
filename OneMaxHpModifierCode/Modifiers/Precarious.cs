@@ -2,6 +2,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 using BaseLib.Abstracts;
 using BaseLib.Extensions;
+using BaseLib.Utils.Attributes;
 using BaseLib.Utils.Patching;
 using Godot;
 using HarmonyLib;
@@ -36,6 +37,7 @@ static class MaxHpPatch
     }
 }
 
+[CustomID("ONEMAXHPMODIFIER-PRECARIOUS")]
 public class Precarious : CustomModifierModel
 {
     public override ModifierAlignment Alignment => ModifierAlignment.Bad;
@@ -46,7 +48,7 @@ public class Precarious : CustomModifierModel
             _preloaded = PreloadManager.Cache.GetTexture2D(StaticIconPath);
         }
     }
-    static Texture2D? _preloaded;
+    static internal Texture2D? _preloaded;
 
     static readonly string StaticIconPath = ImageHelperExtensions.GetModImagePath("modifiers/1hp.png");
     protected override string IconPath => StaticIconPath;

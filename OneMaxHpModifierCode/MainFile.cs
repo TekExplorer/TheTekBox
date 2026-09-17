@@ -5,6 +5,7 @@ using MegaCrit.Sts2.Core.Modding;
 using MegaCrit.Sts2.Core.Logging;
 using BaseLib.Extensions;
 using System.Reflection;
+using BaseLib.Config;
 
 namespace OneMaxHpModifier.OneMaxHpModifierCode;
 
@@ -18,8 +19,9 @@ public partial class MainFile : Node
 
     public static void Initialize()
     {
+        ModConfigRegistry.Register(ModId, new Config());
         //If you want to use scripts defined in your mod for Godot scenes, uncomment the following line.
-        //Godot.Bridge.ScriptManagerBridge.LookupScriptsInAssembly(Assembly.GetExecutingAssembly());
+        Godot.Bridge.ScriptManagerBridge.LookupScriptsInAssembly(Assembly.GetExecutingAssembly());
 
         Harmony harmony = new(ModId);
 
@@ -27,4 +29,11 @@ public partial class MainFile : Node
 
         Modifiers.Precarious.Preload();
     }
+}
+
+
+public class Config : SimpleModConfig
+{
+    public enum RelicGetSfxType { Normal, Shatter, None }
+    static public RelicGetSfxType RelicGetSfx { get; set; } = RelicGetSfxType.Shatter;
 }

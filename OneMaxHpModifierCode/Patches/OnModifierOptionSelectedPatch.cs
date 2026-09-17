@@ -10,14 +10,11 @@ using OneMaxHpModifier.OneMaxHpModifierCode.Modifiers;
 
 namespace OneMaxHpModifier.OneMaxHpModifierCode.Patches;
 
+interface IEnablesNeowBlessings { }
 [HarmonyPatch(typeof(Neow), "OnModifierOptionSelected", MethodType.Async)]
 public static class OnModifierOptionSelectedPatch
 {
-    private static bool ShouldAllowStandard(IEnumerable<ModifierModel> modifiers)
-    {
-        // TODO: make custom NeowOptions modifier
-        return modifiers.Any(mod => mod is Precarious);
-    }
+    private static bool ShouldAllowStandard(IEnumerable<ModifierModel> modifiers) => modifiers.Any(mod => mod is IEnablesNeowBlessings);
     // Helper replacing SetEventFinished
     public static void HandleModifierFinished(Neow instance, LocString finishDescription)
     {
