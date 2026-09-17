@@ -4,7 +4,7 @@ using MegaCrit.Sts2.Core.Nodes;
 using MegaCrit.Sts2.Core.Nodes.Relics;
 using MegaCrit.Sts2.Core.Nodes.Screens.Overlays;
 
-namespace OneMaxHpModifier.OneMaxHpModifierCode.Nodes;
+namespace TheTekBox.TheTekBoxCode.Nodes;
 
 public partial class NShatterVfx : Node
 {

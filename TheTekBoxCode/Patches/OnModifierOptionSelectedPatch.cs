@@ -6,9 +6,9 @@ using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Models.Events;
 using MegaCrit.Sts2.Core.Models.Relics;
-using OneMaxHpModifier.OneMaxHpModifierCode.Modifiers;
+using TheTekBox.TheTekBoxCode.Modifiers;
 
-namespace OneMaxHpModifier.OneMaxHpModifierCode.Patches;
+namespace TheTekBox.TheTekBoxCode.Patches;
 
 interface IEnablesNeowBlessings { }
 [HarmonyPatch(typeof(Neow), "OnModifierOptionSelected", MethodType.Async)]

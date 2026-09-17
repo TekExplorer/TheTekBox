@@ -4,9 +4,9 @@ using MegaCrit.Sts2.Core.Map;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Events;
 using MegaCrit.Sts2.Core.Rooms;
-using OneMaxHpModifier.OneMaxHpModifierCode.Patches;
+using TheTekBox.TheTekBoxCode.Patches;
 
-namespace OneMaxHpModifier.OneMaxHpModifierCode.Modifiers;
+namespace TheTekBox.TheTekBoxCode.Modifiers;
 
 // Marker for the patches that use it
 public class NeowOptions : CustomModifierModel, IEnablesNeowBlessings

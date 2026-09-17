@@ -4,7 +4,7 @@ using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Relics;
 using MegaCrit.Sts2.Core.Runs;
 
-namespace OneMaxHpModifier.OneMaxHpModifierCode.Modifiers;
+namespace TheTekBox.TheTekBoxCode.Modifiers;
 
 public class NoRelics : CustomModifierModel
 {

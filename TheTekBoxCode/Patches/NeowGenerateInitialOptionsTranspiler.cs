@@ -3,7 +3,7 @@ using HarmonyLib;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Events;
 
-namespace OneMaxHpModifier.OneMaxHpModifierCode.Patches;
+namespace TheTekBox.TheTekBoxCode.Patches;
 
 [HarmonyPatch(typeof(Neow), "GenerateInitialOptions")]
 public static class NeowGenerateInitialOptionsTranspiler

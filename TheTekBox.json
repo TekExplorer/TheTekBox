@@ -1,9 +1,9 @@
 ﻿{
-  "id": "OneMaxHpModifier",
-  "name": "Precarious",
+  "id": "TheTekBox",
+  "name": "The Tek Box",
   "author": "TekExplorer",
-  "description": "A mod that adds a new Precarious modifier",
-  "version": "v0.0.5",
+  "description": "A series of challenges by TekExplorer",
+  "version": "v0.0.6",
   "min_game_version": "0.107.0",
   "has_pck": true,
   "has_dll": true,

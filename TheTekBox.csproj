@@ -49,15 +49,15 @@
         <PackageReference Include="Alchyr.Sts2.ModAnalyzers" Version="*" />
         <!-- Generates a .pck file when building if only using simple assets. May not work on all setups. Uncomment to test. -->
         <!-- <PackageReference Include="BSchneppe.StS2.PckPacker" Version="0.1.1" PrivateAssets="All" /> -->
-        <AdditionalFiles Include="OneMaxHpModifier/localization/**/*.json"/> <!-- Used by analyzer -->
+        <AdditionalFiles Include="TheTekBox/localization/**/*.json"/> <!-- Used by analyzer -->
     </ItemGroup>
 
     <ItemGroup>
-        <Compile Remove="OneMaxHpModifier/**" />
+        <Compile Remove="TheTekBox/**" />
         <Compile Remove="materials/**" />
         <Compile Remove="shaders/**" />
         <Compile Remove="images/**" />
-        <EmbeddedResource Remove="OneMaxHpModifier/**" />
+        <EmbeddedResource Remove="TheTekBox/**" />
         <EmbeddedResource Remove="materials/**" />
         <EmbeddedResource Remove="shaders/**" />
         <EmbeddedResource Remove="images/**" />
@@ -66,9 +66,9 @@
     <ItemGroup>
         <None Condition="Exists('Directory.Build.props')" Include="Directory.Build.props"/>
         <None Include=".gitignore" />
-        <None Include="OneMaxHpModifier.json" />
+        <None Include="TheTekBox.json" />
         <None Include="project.godot"/>
-        <None Include="OneMaxHpModifier/**" />
+        <None Include="TheTekBox/**" />
     </ItemGroup>
     
     <Target Name="CheckDependencyPaths" >

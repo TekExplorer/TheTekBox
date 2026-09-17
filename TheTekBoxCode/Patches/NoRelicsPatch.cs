@@ -21,10 +21,10 @@ using MegaCrit.Sts2.Core.Nodes.Screens.Shops;
 using MegaCrit.Sts2.Core.Nodes.Screens.TreasureRoomRelic;
 using MegaCrit.Sts2.Core.Rewards;
 using MegaCrit.Sts2.Core.Runs;
-using OneMaxHpModifier.OneMaxHpModifierCode.Modifiers;
-using OneMaxHpModifier.OneMaxHpModifierCode.Nodes;
+using TheTekBox.TheTekBoxCode.Modifiers;
+using TheTekBox.TheTekBoxCode.Nodes;
 
-namespace OneMaxHpModifier.OneMaxHpModifierCode.Patches;
+namespace TheTekBox.TheTekBoxCode.Patches;
 
 [HarmonyPatch]
 public static class NoRelicsPatch

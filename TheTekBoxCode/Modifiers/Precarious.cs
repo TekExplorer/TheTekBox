@@ -14,7 +14,7 @@ using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Runs;
 
-namespace OneMaxHpModifier.OneMaxHpModifierCode.Modifiers;
+namespace TheTekBox.TheTekBoxCode.Modifiers;
 
 [HarmonyPatch(typeof(CreatureCmd), nameof(CreatureCmd.GainMaxHp), MethodType.Async)]
 static class MaxHpPatch

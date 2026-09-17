@@ -7,13 +7,13 @@ using BaseLib.Extensions;
 using System.Reflection;
 using BaseLib.Config;
 
-namespace OneMaxHpModifier.OneMaxHpModifierCode;
+namespace TheTekBox.TheTekBoxCode;
 
-//You're recommended but not required to keep all your code in this package and all your assets in the OneMaxHpModifier folder.
+//You're recommended but not required to keep all your code in this package and all your assets in the TheTekBox folder.
 [ModInitializer(nameof(Initialize))]
 public partial class MainFile : Node
 {
-    public const string ModId = "OneMaxHpModifier"; //At the moment, this is used only for the Logger and harmony names.
+    public const string ModId = "TheTekBox"; //At the moment, this is used only for the Logger and harmony names.
 
     public static Logger Logger { get; } = new(ModId, LogType.Generic);
 
