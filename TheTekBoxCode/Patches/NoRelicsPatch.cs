@@ -29,6 +29,7 @@ public static class NoRelicsPatch
     }
     static readonly NotNullSpireField<Player, IntBox> AllowNextCmdRelics = new(() => new(0));
     static readonly NotNullSpireField<Player, List<RelicModel>> AllowedRelics = new(() => []);
+    static readonly NotNullSpireField<Player, List<RelicModel>> IsReplacing = new(() => []);
 
     [HarmonyPatch(typeof(RelicConsoleCmd), nameof(RelicConsoleCmd.Process))]
     static class RelicConsoleCmdPatch
@@ -155,6 +156,7 @@ public static class NoRelicsPatch
     static void Replace(RelicModel original, RelicModel replace)
     {
         AllowedRelics[original.Owner].Add(replace);
+        IsReplacing[original.Owner].Add(replace);
     }
 
     [HarmonyPatch(typeof(RelicCmd), nameof(RelicCmd.Remove))]
@@ -163,10 +165,13 @@ public static class NoRelicsPatch
     {
         if (!NoRelics.IsActive()) return;
         if (!LocalContext.IsMine(relic)) return;
+        if (IsReplacing[relic.Owner].Contains(relic)) return;
         var _relicNodes = NRun.Instance?.GlobalUi.RelicInventory._relicNodes;
         var nRelicInventoryHolder = _relicNodes?.FirstOrDefault(n => n.Relic.Model == relic);
         if (nRelicInventoryHolder == null) return;
         PlaySfx();
+
+        if (!Config.RelicShatterVfxEnabled) return;
         NShatterVfx.ShatterRelicNode(nRelicInventoryHolder.Relic);
     }
     [HarmonyPatch(typeof(RelicCmd), nameof(RelicCmd.Obtain), [typeof(RelicModel), typeof(Player), typeof(int)])]
