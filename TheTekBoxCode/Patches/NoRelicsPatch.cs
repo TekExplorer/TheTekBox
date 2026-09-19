@@ -1,4 +1,3 @@
-using System.Runtime.InteropServices;
 using BaseLib.Utils;
 using Godot;
 using HarmonyLib;
@@ -9,7 +8,6 @@ using MegaCrit.Sts2.Core.DevConsole;
 using MegaCrit.Sts2.Core.DevConsole.ConsoleCommands;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Models;
-using MegaCrit.Sts2.Core.Models.Relics;
 using MegaCrit.Sts2.Core.Nodes;
 using MegaCrit.Sts2.Core.Nodes.Relics;
 using MegaCrit.Sts2.Core.Nodes.Rewards;
@@ -29,8 +27,8 @@ public static class NoRelicsPatch
     {
         public int Value { get; set; } = value;
     }
-    static readonly NotNullSpireField<IRunState, IntBox> AllowNextCmdRelics = new(() => new(0));
-    static readonly NotNullSpireField<IRunState, List<RelicModel>> AllowedRelics = new(() => []);
+    static readonly NotNullSpireField<Player, IntBox> AllowNextCmdRelics = new(() => new(0));
+    static readonly NotNullSpireField<Player, List<RelicModel>> AllowedRelics = new(() => []);
 
     [HarmonyPatch(typeof(RelicConsoleCmd), nameof(RelicConsoleCmd.Process))]
     static class RelicConsoleCmdPatch
@@ -40,10 +38,13 @@ public static class NoRelicsPatch
         {
             if (issuingPlayer == null || !NoRelics.IsActive(issuingPlayer)) return true;
             if (args.Length < 1) return true;
-            if (args.Last().ToLowerInvariant().Equals("--force")) return true;
-            var allowedNext = AllowNextCmdRelics[issuingPlayer.RunState];
-
             if (args[0].ToLowerInvariant().Equals("remove")) return true;
+            var allowedNext = AllowNextCmdRelics[issuingPlayer];
+            if (args.Last().ToLowerInvariant().Equals("--force"))
+            {
+                allowedNext.Value++;
+                return true;
+            }
             if (args[0].ToLowerInvariant().Equals("allownext"))
             {
                 int amount = 1;
@@ -56,12 +57,13 @@ public static class NoRelicsPatch
                 if (allowedNext.Value < 0) allowedNext.Value = 0;
                 __result = new(true, allowedNext.Value switch
                 {
-                    0 => $"No more relics will be allowed through the No Relics modifier.\nThank you for keeping to the challenge!",
+                    0 => $"No relics will be allowed through the No Relics modifier.\nThank you for keeping to the challenge!",
                     1 => $"Your next relic will be allowed through the No Relics modifier.\nYou can clear this by running \"relic allownext -1\"",
-                    _ => $"Your next {allowedNext.Value} relics will be allowed through the No Relics modifier.\nYou can clear this by running \"relic allownext {allowedNext.Value}\""
+                    _ => $"Your next {allowedNext.Value} relics will be allowed through the No Relics modifier.\nYou can clear this by running \"relic allownext {-allowedNext.Value}\""
                 });
                 return false;
             }
+            if (allowedNext.Value > 0) return true;
             __result = new(false, "No Relics modifier is active.\nTo allow the next relic to be added, use \"relic allownext 1\". Negative values remove next allows.\nAdding --force to the end of your command will also bypass this check.");
             return false;
         }
@@ -72,7 +74,7 @@ public static class NoRelicsPatch
     static bool AnimateRelicPrefix(RelicModel relic, Vector2? startPosition = null, Vector2? startScale = null)
     {
         if (!NoRelics.IsActive()) return true;
-        if (AllowedRelics[RunManager.Instance.State!].Contains(relic)) return true;
+        if (AllowedRelics[LocalContext.GetMe(RunManager.Instance.State)!].Contains(relic)) return true;
         if (!Config.RelicShatterVfxEnabled) return false;
 
         // 1. CHESTS: Use the live holder's NRelic
@@ -152,7 +154,7 @@ public static class NoRelicsPatch
     [HarmonyPrefix]
     static void Replace(RelicModel original, RelicModel replace)
     {
-        AllowedRelics[original.Owner.RunState].Add(replace);
+        AllowedRelics[original.Owner].Add(replace);
     }
 
     [HarmonyPatch(typeof(RelicCmd), nameof(RelicCmd.Remove))]
@@ -174,7 +176,7 @@ public static class NoRelicsPatch
         static void Postfix(ref Task<RelicModel> __result, RelicModel relic, Player player)
         {
             // Ensure no race conditions. we decrement after.
-            __result.ContinueWith(_ => AllowedRelics[player.RunState].Remove(relic));
+            __result.ContinueWith(_ => AllowedRelics[player].Remove(relic));
         }
 
         [HarmonyPrefix]
@@ -185,11 +187,11 @@ public static class NoRelicsPatch
                 return true;
             }
 
-            if (AllowedRelics[player.RunState].Contains(relic)) return true;
-            if (AllowNextCmdRelics[player.RunState].Value > 0)
+            if (AllowedRelics[player].Contains(relic)) return true;
+            if (AllowNextCmdRelics[player].Value > 0)
             {
-                AllowedRelics[player.RunState].Add(relic);
-                AllowNextCmdRelics[player.RunState].Value--;
+                AllowedRelics[player].Add(relic);
+                AllowNextCmdRelics[player].Value--;
                 return true;
             }
 
