@@ -1,5 +1,5 @@
-using System.Linq;
-using System.Threading.Tasks;
+using System.Runtime.InteropServices;
+using BaseLib.Utils;
 using Godot;
 using HarmonyLib;
 using MegaCrit.Sts2.Core.Audio.Debug;
@@ -8,41 +8,71 @@ using MegaCrit.Sts2.Core.Context;
 using MegaCrit.Sts2.Core.DevConsole;
 using MegaCrit.Sts2.Core.DevConsole.ConsoleCommands;
 using MegaCrit.Sts2.Core.Entities.Players;
-using MegaCrit.Sts2.Core.Helpers;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Relics;
 using MegaCrit.Sts2.Core.Nodes;
 using MegaCrit.Sts2.Core.Nodes.Relics;
 using MegaCrit.Sts2.Core.Nodes.Rewards;
-using MegaCrit.Sts2.Core.Nodes.Rooms;
 using MegaCrit.Sts2.Core.Nodes.Screens;
 using MegaCrit.Sts2.Core.Nodes.Screens.Overlays;
 using MegaCrit.Sts2.Core.Nodes.Screens.Shops;
-using MegaCrit.Sts2.Core.Nodes.Screens.TreasureRoomRelic;
 using MegaCrit.Sts2.Core.Rewards;
 using MegaCrit.Sts2.Core.Runs;
 using TheTekBox.TheTekBoxCode.Modifiers;
 using TheTekBox.TheTekBoxCode.Nodes;
-
 namespace TheTekBox.TheTekBoxCode.Patches;
 
 [HarmonyPatch]
 public static class NoRelicsPatch
 {
-    [HarmonyPrefix]
-    [HarmonyPatch(typeof(RelicConsoleCmd), nameof(RelicConsoleCmd.Process))]
-    static bool MogCommandLine(ref CmdResult __result, Player? issuingPlayer)
+    class IntBox(int value)
     {
-        if (issuingPlayer == null || !NoRelics.IsActive(issuingPlayer)) return true;
-        __result = new(false, "No.");
-        return false;
+        public int Value { get; set; } = value;
+    }
+    static readonly NotNullSpireField<IRunState, IntBox> AllowNextCmdRelics = new(() => new(0));
+    static readonly NotNullSpireField<IRunState, List<RelicModel>> AllowedRelics = new(() => []);
+
+    [HarmonyPatch(typeof(RelicConsoleCmd), nameof(RelicConsoleCmd.Process))]
+    static class RelicConsoleCmdPatch
+    {
+        [HarmonyPrefix]
+        static bool Prefix(ref CmdResult __result, Player? issuingPlayer, ref string[] args)
+        {
+            if (issuingPlayer == null || !NoRelics.IsActive(issuingPlayer)) return true;
+            if (args.Length < 1) return true;
+            if (args.Last().ToLowerInvariant().Equals("--force")) return true;
+            var allowedNext = AllowNextCmdRelics[issuingPlayer.RunState];
+
+            if (args[0].ToLowerInvariant().Equals("remove")) return true;
+            if (args[0].ToLowerInvariant().Equals("allownext"))
+            {
+                int amount = 1;
+                if (args.Length > 1 && !int.TryParse(args[1], out amount))
+                {
+                    __result = new(false, $"Invalid argument: {args[1]} is not an integer. Command was \"relic {string.Join(' ', args)}\"");
+                    return false;
+                }
+                allowedNext.Value += amount;
+                if (allowedNext.Value < 0) allowedNext.Value = 0;
+                __result = new(true, allowedNext.Value switch
+                {
+                    0 => $"No more relics will be allowed through the No Relics modifier.\nThank you for keeping to the challenge!",
+                    1 => $"Your next relic will be allowed through the No Relics modifier.\nYou can clear this by running \"relic allownext -1\"",
+                    _ => $"Your next {allowedNext.Value} relics will be allowed through the No Relics modifier.\nYou can clear this by running \"relic allownext {allowedNext.Value}\""
+                });
+                return false;
+            }
+            __result = new(false, "No Relics modifier is active.\nTo allow the next relic to be added, use \"relic allownext 1\". Negative values remove next allows.\nAdding --force to the end of your command will also bypass this check.");
+            return false;
+        }
     }
 
     [HarmonyPrefix]
     [HarmonyPatch(typeof(NRelicInventory), nameof(NRelicInventory.AnimateRelic), [typeof(RelicModel), typeof(Vector2?), typeof(Vector2?)])]
     static bool AnimateRelicPrefix(RelicModel relic, Vector2? startPosition = null, Vector2? startScale = null)
     {
-        if (!NoRelics.IsActive() || relic == null) return true;
+        if (!NoRelics.IsActive()) return true;
+        if (AllowedRelics[RunManager.Instance.State!].Contains(relic)) return true;
         if (!Config.RelicShatterVfxEnabled) return false;
 
         // 1. CHESTS: Use the live holder's NRelic
@@ -118,12 +148,51 @@ public static class NoRelicsPatch
         return false;
     }
 
+    [HarmonyPatch(typeof(RelicCmd), nameof(RelicCmd.Replace))]
     [HarmonyPrefix]
-    [HarmonyPatch(typeof(RelicCmd), nameof(RelicCmd.Obtain), [typeof(RelicModel), typeof(Player), typeof(int)])]
-    static bool Prefix(ref Task<RelicModel> __result, RelicModel relic, Player player)
+    static void Replace(RelicModel original, RelicModel replace)
     {
-        if (player.RunState.Modifiers.Any(mod => mod is NoRelics))
+        AllowedRelics[original.Owner.RunState].Add(replace);
+    }
+
+    [HarmonyPatch(typeof(RelicCmd), nameof(RelicCmd.Remove))]
+    [HarmonyPrefix]
+    static void Remove(RelicModel relic)
+    {
+        if (!NoRelics.IsActive()) return;
+        if (!LocalContext.IsMine(relic)) return;
+        var _relicNodes = NRun.Instance?.GlobalUi.RelicInventory._relicNodes;
+        var nRelicInventoryHolder = _relicNodes?.FirstOrDefault(n => n.Relic.Model == relic);
+        if (nRelicInventoryHolder == null) return;
+        PlaySfx();
+        NShatterVfx.ShatterRelicNode(nRelicInventoryHolder.Relic);
+    }
+    [HarmonyPatch(typeof(RelicCmd), nameof(RelicCmd.Obtain), [typeof(RelicModel), typeof(Player), typeof(int)])]
+    static class RelicCmdObtain
+    {
+        [HarmonyPostfix]
+        static void Postfix(ref Task<RelicModel> __result, RelicModel relic, Player player)
         {
+            // Ensure no race conditions. we decrement after.
+            __result.ContinueWith(_ => AllowedRelics[player.RunState].Remove(relic));
+        }
+
+        [HarmonyPrefix]
+        static bool Prefix(ref Task<RelicModel> __result, RelicModel relic, Player player)
+        {
+            if (!player.RunState.Modifiers.Any(mod => mod is NoRelics))
+            {
+                return true;
+            }
+
+            if (AllowedRelics[player.RunState].Contains(relic)) return true;
+            if (AllowNextCmdRelics[player.RunState].Value > 0)
+            {
+                AllowedRelics[player.RunState].Add(relic);
+                AllowNextCmdRelics[player.RunState].Value--;
+                return true;
+            }
+
             async Task<RelicModel> Do()
             {
                 await DoEffect(relic, player);
@@ -133,34 +202,37 @@ public static class NoRelicsPatch
             __result = Do();
             return false;
         }
-        return true;
-    }
-
-    private static async Task DoEffect(RelicModel relic, Player player)
-    {
-        relic.AssertMutable();
-        IRunState runState = player.RunState;
-
-        if (!relic.IsStackable)
+        private static async Task DoEffect(RelicModel relic, Player player)
         {
-            player.RelicGrabBag.Remove(relic);
-            runState.SharedRelicGrabBag.Remove(relic);
-        }
+            relic.AssertMutable();
+            IRunState runState = player.RunState;
 
-        if (LocalContext.IsMe(player))
-        {
-            NRun.Instance?.GlobalUi.RelicInventory.AnimateRelic(relic);
-            switch (Config.RelicGetSfx)
+            if (!relic.IsStackable)
             {
-                case Config.RelicGetSfxType.Normal:
-                    NDebugAudioManager.Instance?.Play("relic_get.mp3");
-                    break;
-                case Config.RelicGetSfxType.Shatter:
-                    NDebugAudioManager.Instance?.Play("universfield-bottle-shatter-229205.mp3");
-                    break;
+                player.RelicGrabBag.Remove(relic);
+                runState.SharedRelicGrabBag.Remove(relic);
             }
+
+            if (LocalContext.IsMe(player))
+            {
+                NRun.Instance?.GlobalUi.RelicInventory.AnimateRelic(relic);
+                PlaySfx();
+            }
+
+            await Task.CompletedTask;
         }
 
-        await Task.CompletedTask;
+    }
+    private static void PlaySfx()
+    {
+        switch (Config.RelicGetSfx)
+        {
+            case Config.RelicGetSfxType.Normal:
+                NDebugAudioManager.Instance?.Play("relic_get.mp3");
+                break;
+            case Config.RelicGetSfxType.Shatter:
+                NDebugAudioManager.Instance?.Play("universfield-bottle-shatter-229205.mp3");
+                break;
+        }
     }
 }

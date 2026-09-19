@@ -1,4 +1,6 @@
+using System.Reflection.Metadata.Ecma335;
 using BaseLib.Abstracts;
+using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Relics;
@@ -14,4 +16,18 @@ public class NoRelics : CustomModifierModel
     public override ModifierAlignment Alignment => ModifierAlignment.Bad;
     protected override string IconPath => ModelDb.Relic<Circlet>().IconPath;
     public override IEnumerable<ModifierModel> MutuallyExclusiveGroup => [ModelDb.Modifier<NeowOptions>()];
+    public override Func<Task>? GenerateNeowOption(EventModel eventModel)
+    {
+        if (eventModel.Owner is not { } owner) return null;
+        return RemoveAllRelics;
+        async Task RemoveAllRelics()
+        {
+            // No concurrent modification!
+            var relics = owner.Relics.ToList();
+            foreach (var relic in relics)
+            {
+                await RelicCmd.Remove(relic);
+            }
+        }
+    }
 }
